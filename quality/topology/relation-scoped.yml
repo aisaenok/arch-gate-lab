@@ -1,0 +1,90 @@
+repositories:
+  orders-contract:
+    type: openapi
+    root: ./contracts/orders
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  payments-contract:
+    type: openapi
+    root: ./contracts/payments
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  orders-backend:
+    type: java
+    root: ./backends/orders
+    roles: [api-provider]
+    sourceDirs:
+      - src/main/java
+    frameworks:
+      - jax-rs
+
+  payments-backend:
+    type: java
+    root: ./backends/payments
+    roles: [api-provider]
+    sourceDirs:
+      - src/main/java
+    frameworks:
+      - jax-rs
+
+relations:
+  - type: implemented-by
+    from: orders-contract
+    to: orders-backend
+
+  - type: implemented-by
+    from: payments-contract
+    to: payments-backend
+
+rules:
+  - id: TOPO001
+    description: Contract operation must be implemented by its related backend
+    scope: check
+    select:
+      fact: contract-operation
+      repositoryRoles:
+        - field: repositoryId
+          role: api-contract
+    assert:
+      - field: operationKey
+        memberOf:
+          fact: backend-endpoint
+          field: operationKey
+          repositoryRoles:
+            - field: repositoryId
+              role: api-provider
+          repositoryRelation:
+            type: implemented-by
+            currentField: repositoryId
+            candidateField: repositoryId
+            direction: outgoing
+        message: Contract operation is not implemented by its related backend
+    sourceField: repositoryId
+    targetField: operationKey
+
+  - id: TOPO002
+    description: Backend endpoint must belong to its related contract
+    scope: check
+    select:
+      fact: backend-endpoint
+      repositoryRoles:
+        - field: repositoryId
+          role: api-provider
+    assert:
+      - field: operationKey
+        memberOf:
+          fact: contract-operation
+          field: operationKey
+          repositoryRoles:
+            - field: repositoryId
+              role: api-contract
+          repositoryRelation:
+            type: implemented-by
+            currentField: repositoryId
+            candidateField: repositoryId
+            direction: incoming
+        message: Backend endpoint is absent from its related contract
+    sourceField: repositoryId
+    targetField: operationKey
