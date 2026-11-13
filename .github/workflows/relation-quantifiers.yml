@@ -1,0 +1,65 @@
+name: relation-quantifiers
+
+on:
+  push:
+    branches:
+      - test/relation-quantifiers
+  pull_request:
+    paths:
+      - "quality/quantifiers/**"
+      - ".github/workflows/relation-quantifiers.yml"
+
+jobs:
+  quantifiers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Default quantifier stays ANY for backward compatibility
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/current-implicit-any.yml
+
+      - name: ALL rejects a missing implementation in one related provider
+        shell: bash
+        run: |
+          set +e
+          output=$(node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-all.yml --format json)
+          status=$?
+          set -e
+          echo "$output"
+
+          test "$status" -eq 1
+          echo "$output" | grep '"quantifier": "all"'
+          echo "$output" | grep '"missingRepositories": "replica"'
+
+      - name: ANY passes once one related provider proves the match
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-any-with-unavailable.yml
+
+      - name: ALL is PARTIAL when the only missing provider is unavailable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-all-with-unavailable.yml
+          status=$?
+          set -e
+
+          test "$status" -eq 3
