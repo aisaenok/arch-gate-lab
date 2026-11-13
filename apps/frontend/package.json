@@ -1,0 +1,5 @@
+{
+  "name": "@arch-gate-lab/frontend",
+  "private": true,
+  "type": "module"
+}

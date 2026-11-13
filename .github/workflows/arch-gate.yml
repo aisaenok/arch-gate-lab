@@ -1,0 +1,77 @@
+name: architecture-gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lab
+        uses: actions/checkout@v4
+
+      - name: Checkout arch-gate
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: feat/architecture-gate-poc
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm run build
+          npm test
+
+      - name: Check valid monorepo
+        run: node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.yml
+
+      - name: Reject direct HTTP usage
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-http.yml; then
+            echo "Expected API001 violation"
+            exit 1
+          fi
+
+      - name: Reject manual wire DTO
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-dto.yml; then
+            echo "Expected API002 violation"
+            exit 1
+          fi
+
+      - name: Check valid architecture plan
+        run: node .tools/arch-gate/dist/src/index.js plan ./plans/valid.json --config ./arch-gate.yml
+
+      - name: Reject custom HTTP plan
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-custom-http.json --config ./arch-gate.yml; then
+            echo "Expected PLAN002 violation"
+            exit 1
+          fi
+
+      - name: Reject wrong wire source
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-wire-source.json --config ./arch-gate.yml; then
+            echo "Expected PLAN003/PLAN004 violations"
+            exit 1
+          fi
+
+      - name: Reject missing operation
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-operation.json --config ./arch-gate.yml; then
+            echo "Expected PLAN001 violation"
+            exit 1
+          fi
