@@ -1,0 +1,98 @@
+name: fact-quality
+
+on:
+  push:
+    branches:
+      - test/fact-quality
+  pull_request:
+    paths:
+      - "quality/**"
+      - "apps/frontend/**"
+      - "packages/api-contracts/**"
+      - "arch-gate.yml"
+      - ".github/workflows/fact-quality.yml"
+
+jobs:
+  semantic-facts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lab
+        uses: actions/checkout@v4
+
+      - name: Checkout arch-gate semantic facts
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: feat/semantic-facts
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Valid monorepo passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.yml
+
+      - name: Unused axios import is not an HTTP call
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-unused-axios.yml
+
+      - name: Alias to generated DTO preserves provenance
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-generated-alias.yml
+
+      - name: Standalone similar-shape DTO is not guessed to be wire DTO
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-renamed-dto.yml
+
+      - name: Wrapper bypass is rejected
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml; then
+            echo "Expected API001 violation"
+            exit 1
+          fi
+
+      - name: Manual boundary DTO is rejected
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./quality/manual-boundary-dto.yml; then
+            echo "Expected API002 violation"
+            exit 1
+          fi
+
+      - name: Extra generated endpoint is rejected
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-generated-extra-endpoint.yml; then
+            echo "Expected API003 violation"
+            exit 1
+          fi
+
+      - name: Missing Java evidence is PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-backend-endpoint.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 3 ]; then
+            echo "Expected PARTIAL exit code 3, got $status"
+            exit 1
+          fi
+
+      - name: Unknown fact kind is a config error
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-policy-typo.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 2 ]; then
+            echo "Expected config error exit code 2, got $status"
+            exit 1
+          fi

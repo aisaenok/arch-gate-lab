@@ -1,0 +1,42 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-negative-generated-extra-endpoint
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs:
+      - src/shared/api/generated
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+  contracts:
+    type: openapi
+    root: ../packages/api-contracts
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+rules:
+  - id: API003
+    description: Generated runtime operation must exist in contract
+    scope: check
+    select:
+      fact: http-call
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+      where:
+        - field: sourceGenerated
+          equals: true
+        - field: operationKeyKnown
+          equals: true
+    assert:
+      - field: operationKey
+        memberOf:
+          fact: contract-operation
+          field: operationKey
+          repositoryRoles:
+            - field: repositoryId
+              role: api-contract
+    sourceField: source
+    targetField: operationKey
