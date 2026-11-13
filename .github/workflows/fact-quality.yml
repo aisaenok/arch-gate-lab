@@ -1,0 +1,123 @@
+name: fact-quality
+
+on:
+  push:
+    branches:
+      - test/fact-quality
+  pull_request:
+    paths:
+      - "quality/**"
+      - "apps/frontend/**"
+      - "packages/api-contracts/**"
+      - "services/backend/**"
+      - "arch-gate*.yml"
+      - ".github/workflows/fact-quality.yml"
+
+jobs:
+  semantic-facts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lab
+        uses: actions/checkout@v4
+
+      - name: Checkout arch-gate semantic facts
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Valid monorepo passes including JAX-RS contract coverage
+        run: node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.yml
+
+      - name: Unused axios import is not an HTTP call
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-unused-axios.yml
+
+      - name: Alias to generated DTO preserves provenance
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-generated-alias.yml
+
+      - name: Standalone similar-shape DTO is not guessed to be wire DTO
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-renamed-dto.yml
+
+      - name: Wrapper bypass is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Manual boundary DTO is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/manual-boundary-dto.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Extra generated frontend endpoint is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-generated-extra-endpoint.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Backend endpoint absent from OpenAPI is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-backend-endpoint.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Contract operation missing in backend is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/missing-backend-implementation.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Contract operation missing in generated frontend is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/missing-frontend-generated-operation.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Java parse failure produces PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/partial-java-parse.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
+
+      - name: Unknown fact kind is a config error
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-policy-typo.yml
+          status=$?
+          set -e
+          test "$status" -eq 2

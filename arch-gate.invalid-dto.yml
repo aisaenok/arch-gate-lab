@@ -11,38 +11,18 @@ repositories:
     httpModules:
       - axios
 
-  contracts:
-    type: openapi
-    root: ./packages/api-contracts
-    roles: [api-contract]
-    openapi: openapi.yaml
-
-  backend:
-    type: java
-    root: ./services/backend
-    roles: [api-provider]
-
 rules:
   - id: API002
-    description: Wire DTO must come from the API contract
+    description: Request types crossing generated API boundary need contract provenance
     scope: check
     select:
-      fact: declared-type
+      fact: api-boundary-type
       repositoryRoles:
         - field: repositoryId
           role: api-consumer
-      where:
-        - field: manualContractTypeAllowed
-          equals: false
     assert:
-      - field: name
-        not: true
-        memberOf:
-          fact: contract-schema
-          field: name
-          repositoryRoles:
-            - field: repositoryId
-              role: api-contract
-        message: Consumer manually declares a type owned by the API contract
+      - field: contractTypeProvenance
+        equals: true
+        message: A request passed to generated API is typed from a local non-contract declaration
     sourceField: source
-    targetField: name
+    targetField: actualType

@@ -1,0 +1,23 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-negative-renamed-dto
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs: []
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+rules:
+  - id: NO_BOUNDARY_RULE
+    description: Standalone types are not wire violations merely because their shape resembles a contract
+    scope: check
+    select:
+      fact: type-declaration
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+    assert:
+      - field: definesShape
+        equals: true

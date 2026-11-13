@@ -1,0 +1,24 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-positive-generated-alias
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs:
+      - ../../../apps/frontend/src/shared/api/generated
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+rules:
+  - id: API002
+    description: Generated API boundary requires generated type provenance
+    scope: check
+    select:
+      fact: api-boundary-type
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+    assert:
+      - field: contractTypeProvenance
+        equals: true

@@ -1,0 +1,27 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-negative-wrapper-bypass
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs: []
+    allowDirectHttpDirs:
+      - src/shared/http
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+rules:
+  - id: API001
+    description: Consumer HTTP must pass generated runtime
+    scope: check
+    select:
+      fact: http-reach
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+      where:
+        - field: sourceDirectHttpAllowed
+          equals: false
+    assert:
+      - field: throughGeneratedRuntime
+        equals: true

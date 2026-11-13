@@ -1,0 +1,23 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-negative-policy-typo
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs: []
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+rules:
+  - id: TYPO001
+    description: Deliberately misspelled fact kind should not silently pass
+    scope: check
+    select:
+      fact: http-usgae
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+    assert:
+      - field: directHttpAllowed
+        equals: true

@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: feat/architecture-gate-poc
+          ref: main
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
@@ -27,7 +27,6 @@ jobs:
         working-directory: .tools/arch-gate
         run: |
           npm install
-          npm run build
           npm test
 
       - name: Check valid monorepo
@@ -36,16 +35,24 @@ jobs:
       - name: Reject direct HTTP usage
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-http.yml; then
-            echo "Expected API001 violation"
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-http.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "Expected API001 FAIL exit 1, got $status"
             exit 1
           fi
 
-      - name: Reject manual wire DTO
+      - name: Reject manual boundary DTO
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-dto.yml; then
-            echo "Expected API002 violation"
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.invalid-dto.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "Expected API002 FAIL exit 1, got $status"
             exit 1
           fi
 
@@ -55,23 +62,35 @@ jobs:
       - name: Reject custom HTTP plan
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-custom-http.json --config ./arch-gate.yml; then
-            echo "Expected PLAN002 violation"
+          set +e
+          node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-custom-http.json --config ./arch-gate.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "Expected PLAN002 FAIL exit 1, got $status"
             exit 1
           fi
 
       - name: Reject wrong wire source
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-wire-source.json --config ./arch-gate.yml; then
-            echo "Expected PLAN003/PLAN004 violations"
+          set +e
+          node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-wire-source.json --config ./arch-gate.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "Expected PLAN003/PLAN004 FAIL exit 1, got $status"
             exit 1
           fi
 
       - name: Reject missing operation
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-operation.json --config ./arch-gate.yml; then
-            echo "Expected PLAN001 violation"
+          set +e
+          node .tools/arch-gate/dist/src/index.js plan ./plans/invalid-operation.json --config ./arch-gate.yml
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "Expected PLAN001 FAIL exit 1, got $status"
             exit 1
           fi

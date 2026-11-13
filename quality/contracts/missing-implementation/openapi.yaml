@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: Architecture Gate Lab API - completeness negative
+  version: 1.0.0
+
+paths:
+  /api/applications:
+    post:
+      operationId: createApplication
+      responses:
+        "200":
+          description: Application
+
+  /api/applications/{id}:
+    get:
+      operationId: getApplication
+      responses:
+        "200":
+          description: Application
+    delete:
+      operationId: deleteApplication
+      responses:
+        "204":
+          description: Deleted
