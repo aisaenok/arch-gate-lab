@@ -17,17 +17,26 @@ repositories:
     openapi: openapi.yaml
 
 rules:
-  - id: API001
-    description: API consumer must use generated runtime for HTTP transport
+  - id: API003
+    description: Generated runtime operation must exist in contract
     scope: check
     select:
-      fact: http-usage
+      fact: http-call
       repositoryRoles:
         - field: repositoryId
           role: api-consumer
+      where:
+        - field: sourceGenerated
+          equals: true
+        - field: operationKeyKnown
+          equals: true
     assert:
-      - field: directHttpAllowed
-        equals: true
-        message: Direct HTTP transport is forbidden outside generated runtime
+      - field: operationKey
+        memberOf:
+          fact: contract-operation
+          field: operationKey
+          repositoryRoles:
+            - field: repositoryId
+              role: api-contract
     sourceField: source
-    targetField: target
+    targetField: operationKey

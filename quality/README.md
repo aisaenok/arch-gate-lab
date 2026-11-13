@@ -1,22 +1,18 @@
 # Fact quality experiments
 
-These scenarios test whether the facts extracted by the current `arch-gate` implementation are strong enough to support the architectural claims we want to make.
+These scenarios characterize whether facts are strong enough to support the architecture policy.
 
-The important distinction is:
+After the semantic-facts refactor the expected behavior is:
 
-- **architecture expectation** — what the project policy actually means;
-- **current tool result** — what the current analyzers + fact model report.
+| Scenario | Expected result | Why |
+| --- | --- | --- |
+| unused axios import | PASS | an import is not an HTTP call |
+| alias to generated request DTO at API boundary | PASS | provenance resolves through the alias to generated code |
+| low-level wrapper used directly by feature | FAIL API001 | transitive HTTP reach bypasses generated runtime |
+| standalone renamed DTO with similar shape | PASS | shape similarity alone is not evidence of a wire DTO |
+| manual local DTO passed to generated client | FAIL API002 | the type actually crosses the generated API boundary |
+| extra endpoint hidden in generated directory | FAIL API003 | generated HTTP operation is absent from OpenAPI |
+| Java endpoint rule without Java endpoint analyzer | PARTIAL / exit 3 | evidence is unavailable, so a green verdict is impossible |
+| misspelled fact kind in policy | config error / exit 2 | unknown fact vocabulary is rejected |
 
-A mismatch is evidence that the facts are insufficient, even if the generic rule engine itself behaves correctly.
-
-| Scenario | Architecture expectation | Current tool | Classification |
-| --- | --- | --- | --- |
-| unused axios import | PASS: importing without using transport is not an API call | FAIL API001 | false positive |
-| alias to generated DTO | PASS: the alias still points to the contract-owned type | FAIL API002 | false positive |
-| allowed low-level wrapper used by feature | FAIL: feature bypasses generated runtime | PASS | false negative |
-| renamed handwritten wire DTO | FAIL: wire shape is recreated manually | PASS | false negative |
-| extra endpoint hidden in generated directory | FAIL: runtime exposes endpoint absent from OpenAPI | PASS | false negative |
-| Java endpoint absent from contract | FAIL: backend implements an undeclared endpoint | PASS | false negative / missing evidence |
-| misspelled fact kind in policy | FAIL config: policy cannot be evaluated | PASS | false negative / missing policy validation |
-
-The CI job intentionally asserts the **current behavior**, including the wrong behavior. This turns known analyzer limitations into executable evidence instead of undocumented assumptions.
+This deliberately distinguishes semantic evidence from heuristic guessing. The tool should only claim a violation when it can connect the code to the architecture boundary being protected.

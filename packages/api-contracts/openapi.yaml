@@ -4,6 +4,23 @@ info:
   version: 1.0.0
 
 paths:
+  /api/applications:
+    post:
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest"
+      responses:
+        "200":
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+
   /api/applications/{id}:
     get:
       operationId: getApplication
@@ -23,6 +40,13 @@ paths:
 
 components:
   schemas:
+    CreateApplicationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
     ApplicationResponse:
       type: object
       required: [id, status]

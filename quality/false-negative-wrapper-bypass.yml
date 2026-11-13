@@ -10,24 +10,18 @@ repositories:
     allowManualContractTypeDirs: []
     httpModules: [axios]
 
-  contracts:
-    type: openapi
-    root: ../packages/api-contracts
-    roles: [api-contract]
-    openapi: openapi.yaml
-
 rules:
   - id: API001
-    description: API consumer must use generated runtime for HTTP transport
+    description: Consumer HTTP must pass generated runtime
     scope: check
     select:
-      fact: http-usage
+      fact: http-reach
       repositoryRoles:
         - field: repositoryId
           role: api-consumer
+      where:
+        - field: sourceDirectHttpAllowed
+          equals: false
     assert:
-      - field: directHttpAllowed
+      - field: throughGeneratedRuntime
         equals: true
-        message: Direct HTTP transport is forbidden outside generated runtime
-    sourceField: source
-    targetField: target
