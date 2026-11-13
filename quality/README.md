@@ -2,7 +2,7 @@
 
 These scenarios characterize whether facts are strong enough to support the architecture policy.
 
-After the semantic-facts refactor the expected behavior is:
+Expected behavior:
 
 | Scenario | Expected result | Why |
 | --- | --- | --- |
@@ -11,8 +11,9 @@ After the semantic-facts refactor the expected behavior is:
 | low-level wrapper used directly by feature | FAIL API001 | transitive HTTP reach bypasses generated runtime |
 | standalone renamed DTO with similar shape | PASS | shape similarity alone is not evidence of a wire DTO |
 | manual local DTO passed to generated client | FAIL API002 | the type actually crosses the generated API boundary |
-| extra endpoint hidden in generated directory | FAIL API003 | generated HTTP operation is absent from OpenAPI |
-| Java endpoint rule without Java endpoint analyzer | PARTIAL / exit 3 | evidence is unavailable, so a green verdict is impossible |
+| extra endpoint hidden in generated frontend directory | FAIL API003 | generated HTTP operation is absent from OpenAPI |
+| JAX-RS backend endpoint absent from contract | FAIL API005 | backend endpoint facts are matched by normalized method + path |
+| malformed JAX-RS source | PARTIAL / exit 3 | endpoint evidence is incomplete when Java parsing fails |
 | misspelled fact kind in policy | config error / exit 2 | unknown fact vocabulary is rejected |
 
-This deliberately distinguishes semantic evidence from heuristic guessing. The tool should only claim a violation when it can connect the code to the architecture boundary being protected.
+The Java analyzer only claims complete backend endpoint evidence when the repository explicitly declares `frameworks: [jax-rs]`. It parses Java CST, extracts class/method `@Path` plus HTTP-method annotations, and normalizes them to the same operation key used by OpenAPI.

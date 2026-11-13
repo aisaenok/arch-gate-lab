@@ -9,7 +9,8 @@ on:
       - "quality/**"
       - "apps/frontend/**"
       - "packages/api-contracts/**"
-      - "arch-gate.yml"
+      - "services/backend/**"
+      - "arch-gate*.yml"
       - ".github/workflows/fact-quality.yml"
 
 jobs:
@@ -37,7 +38,7 @@ jobs:
           npm install
           npm test
 
-      - name: Valid monorepo passes
+      - name: Valid monorepo passes including JAX-RS contract coverage
         run: node .tools/arch-gate/dist/src/index.js check --config ./arch-gate.yml
 
       - name: Unused axios import is not an HTTP call
@@ -52,38 +53,47 @@ jobs:
       - name: Wrapper bypass is rejected
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml; then
-            echo "Expected API001 violation"
-            exit 1
-          fi
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
 
       - name: Manual boundary DTO is rejected
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js check --config ./quality/manual-boundary-dto.yml; then
-            echo "Expected API002 violation"
-            exit 1
-          fi
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/manual-boundary-dto.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
 
-      - name: Extra generated endpoint is rejected
+      - name: Extra generated frontend endpoint is rejected
         shell: bash
         run: |
-          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-generated-extra-endpoint.yml; then
-            echo "Expected API003 violation"
-            exit 1
-          fi
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-generated-extra-endpoint.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
 
-      - name: Missing Java evidence is PARTIAL
+      - name: Backend endpoint absent from OpenAPI is rejected
         shell: bash
         run: |
           set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-backend-endpoint.yml
           status=$?
           set -e
-          if [ "$status" -ne 3 ]; then
-            echo "Expected PARTIAL exit code 3, got $status"
-            exit 1
-          fi
+          test "$status" -eq 1
+
+      - name: Java parse failure produces PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/partial-java-parse.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
 
       - name: Unknown fact kind is a config error
         shell: bash
@@ -92,7 +102,4 @@ jobs:
           node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-policy-typo.yml
           status=$?
           set -e
-          if [ "$status" -ne 2 ]; then
-            echo "Expected config error exit code 2, got $status"
-            exit 1
-          fi
+          test "$status" -eq 2

@@ -1,8 +1,11 @@
 package dev.archgate.lab;
 
-// Deliberately illustrative: the current arch-gate has no Java endpoint analyzer.
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+
+@Path("/api/admin")
 public final class AdminController {
-    // Equivalent architectural intent: GET /api/admin, absent from OpenAPI.
+    @GET
     public String getAdmin() {
         return "secret";
     }
