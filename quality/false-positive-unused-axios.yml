@@ -1,0 +1,32 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/false-positive-unused-axios
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs: []
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+
+  contracts:
+    type: openapi
+    root: ../packages/api-contracts
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+rules:
+  - id: API001
+    description: API consumer must use generated runtime for HTTP transport
+    scope: check
+    select:
+      fact: http-usage
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+    assert:
+      - field: directHttpAllowed
+        equals: true
+        message: Direct HTTP transport is forbidden outside generated runtime
+    sourceField: source
+    targetField: target

@@ -1,0 +1,29 @@
+repositories:
+  contracts:
+    type: openapi
+    root: ../packages/api-contracts
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  backend:
+    type: java
+    root: ./scenarios/false-negative-backend-endpoint/backend
+    roles: [api-provider]
+
+rules:
+  - id: API003
+    description: Backend endpoint must exist in the API contract
+    scope: check
+    select:
+      fact: backend-endpoint
+      repositoryRoles:
+        - field: repositoryId
+          role: api-provider
+    assert:
+      - field: operationId
+        memberOf:
+          fact: contract-operation
+          field: operationId
+          repositoryRoles:
+            - field: repositoryId
+              role: api-contract

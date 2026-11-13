@@ -1,0 +1,66 @@
+name: fact-quality
+
+on:
+  push:
+    branches:
+      - test/fact-quality
+  pull_request:
+    paths:
+      - "quality/**"
+      - ".github/workflows/fact-quality.yml"
+
+jobs:
+  current-behavior:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lab
+        uses: actions/checkout@v4
+
+      - name: Checkout arch-gate
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: feat/architecture-gate-poc
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm run build
+
+      - name: FP - unused axios import currently fails
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-unused-axios.yml; then
+            echo "Expected current analyzer to produce the known false positive"
+            exit 1
+          fi
+
+      - name: FP - generated DTO alias currently fails
+        shell: bash
+        run: |
+          if node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-generated-alias.yml; then
+            echo "Expected current analyzer to produce the known false positive"
+            exit 1
+          fi
+
+      - name: FN - custom wrapper bypass currently passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml
+
+      - name: FN - renamed manual DTO currently passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-renamed-dto.yml
+
+      - name: FN - extra generated endpoint currently passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-generated-extra-endpoint.yml
+
+      - name: FN - backend endpoint without Java evidence currently passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-backend-endpoint.yml
+
+      - name: FN - unknown fact kind currently passes vacuously
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-policy-typo.yml
