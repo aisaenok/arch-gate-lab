@@ -1,6 +1,6 @@
 import {
   createApplication
-} from "../../../../src/shared/api/generated/runtime.js";
+} from "../../../../../src/shared/api/generated/runtime.js";
 
 interface CreateApplicationPayload {
   name: string;
