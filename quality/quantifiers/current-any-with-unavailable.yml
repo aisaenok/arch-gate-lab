@@ -1,0 +1,47 @@
+repositories:
+  contracts:
+    type: openapi
+    root: ./contracts
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  primary:
+    type: java
+    root: ./backends/primary
+    roles: [api-provider]
+    sourceDirs: [src/main/java]
+    frameworks: [jax-rs]
+
+  unavailable:
+    type: java
+    root: ./backends/unavailable
+    roles: [api-provider]
+    sourceDirs: [src/main/java]
+    frameworks: [jax-rs]
+
+relations:
+  - type: implemented-by
+    from: contracts
+    to: primary
+  - type: implemented-by
+    from: contracts
+    to: unavailable
+
+rules:
+  - id: Q002
+    description: Operation may be implemented by any related provider
+    scope: check
+    select:
+      fact: contract-operation
+    assert:
+      - field: operationKey
+        memberOf:
+          fact: backend-endpoint
+          field: operationKey
+          repositoryRelation:
+            type: implemented-by
+            currentField: repositoryId
+            candidateField: repositoryId
+            direction: outgoing
+    sourceField: operationId
+    targetField: operationKey

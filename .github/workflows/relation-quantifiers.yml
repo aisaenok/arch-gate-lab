@@ -1,0 +1,54 @@
+name: relation-quantifiers
+
+on:
+  push:
+    branches:
+      - test/relation-quantifiers
+  pull_request:
+    paths:
+      - "quality/quantifiers/**"
+      - ".github/workflows/relation-quantifiers.yml"
+
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Current implicit ANY incorrectly satisfies intended ALL
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/current-implicit-any.yml
+          echo "Known false negative reproduced: one of two providers was enough."
+
+      - name: Current evidence handling makes proven ANY partial
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/current-any-with-unavailable.yml
+          status=$?
+          set -e
+
+          if [ "$status" -ne 3 ]; then
+            echo "Expected current PARTIAL exit 3, got $status"
+            exit 1
+          fi
+
+          echo "Known over-conservative PARTIAL reproduced."
