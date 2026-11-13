@@ -1,0 +1,51 @@
+repositories:
+  orders-contract:
+    type: openapi
+    root: ./contracts/orders
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  payments-contract:
+    type: openapi
+    root: ./contracts/payments
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  orders-backend:
+    type: java
+    root: ./backends/orders
+    roles: [api-provider]
+    sourceDirs:
+      - src/main/java
+    frameworks:
+      - jax-rs
+
+  payments-backend:
+    type: java
+    root: ./backends/payments
+    roles: [api-provider]
+    sourceDirs:
+      - src/main/java
+    frameworks:
+      - jax-rs
+
+rules:
+  - id: API006
+    description: Every API contract operation must be implemented by its backend
+    scope: check
+    select:
+      fact: contract-operation
+      repositoryRoles:
+        - field: repositoryId
+          role: api-contract
+    assert:
+      - field: operationKey
+        memberOf:
+          fact: backend-endpoint
+          field: operationKey
+          repositoryRoles:
+            - field: repositoryId
+              role: api-provider
+        message: API contract operation has no backend implementation
+    sourceField: operationId
+    targetField: operationKey
