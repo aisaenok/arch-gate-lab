@@ -10,31 +10,48 @@ on:
       - ".github/workflows/topology-quality.yml"
 
 jobs:
-  characterize:
+  topology:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout lab
         uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate repository relations
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/repository-relations
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Current role-only topology incorrectly passes
+      - name: Role-only topology still passes as a broad policy
         run: |
           node .tools/arch-gate/dist/src/index.js check --config ./quality/topology/current-role-only.yml
-          echo "Known false negative reproduced: swapped providers were accepted."
+
+      - name: Relation-scoped topology rejects swapped providers
+        shell: bash
+        run: |
+          set +e
+          output=$(node .tools/arch-gate/dist/src/index.js check --config ./quality/topology/relation-scoped.yml --format json)
+          status=$?
+          set -e
+
+          echo "$output"
+
+          if [ "$status" -ne 1 ]; then
+            echo "Expected relation-scoped FAIL exit 1, got $status"
+            exit 1
+          fi
+
+          echo "$output" | grep '"rule": "TOPO001"'
+          echo "$output" | grep '"rule": "TOPO002"'
