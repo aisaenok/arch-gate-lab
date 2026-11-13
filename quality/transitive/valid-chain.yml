@@ -1,0 +1,65 @@
+repositories:
+  frontend:
+    type: typescript
+    root: .
+    roles: [api-consumer]
+    sourceDir: src
+
+  bff:
+    type: java
+    root: .
+    roles: [api-provider]
+
+  orders-backend:
+    type: java
+    root: .
+    roles: [api-provider]
+
+  payments-backend:
+    type: java
+    root: .
+    roles: [api-provider]
+
+  orders-contract:
+    type: openapi
+    root: ./contracts/orders
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+  payments-contract:
+    type: openapi
+    root: ./contracts/payments
+    roles: [api-contract]
+    openapi: openapi.yaml
+
+relations:
+  - type: forwards-to
+    from: bff
+    to: orders-backend
+
+  - type: implemented-by
+    from: orders-contract
+    to: orders-backend
+
+  - type: implemented-by
+    from: payments-contract
+    to: payments-backend
+
+rules:
+  - id: PLAN_TOPO001
+    description: Planned operation must belong to the contract behind the selected provider chain
+    scope: plan
+    select:
+      fact: intent-api-call
+    assert:
+      - field: operationId
+        memberOf:
+          fact: contract-operation
+          field: operationId
+          repositoryRelation:
+            type: implemented-by
+            currentField: providerRepositoryId
+            candidateField: repositoryId
+            direction: incoming
+        message: Planned operation is not available through the selected provider topology
+    targetField: operationId

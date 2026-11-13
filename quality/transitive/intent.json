@@ -1,0 +1,10 @@
+{
+  "apiCalls": [
+    {
+      "consumer": "frontend",
+      "provider": "bff",
+      "operationId": "getOrder",
+      "via": "generated-runtime"
+    }
+  ]
+}
