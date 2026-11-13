@@ -10,45 +10,56 @@ on:
       - ".github/workflows/relation-quantifiers.yml"
 
 jobs:
-  characterize:
+  quantifiers:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate relation quantifiers
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/relation-quantifiers
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Current implicit ANY incorrectly satisfies intended ALL
+      - name: Default quantifier stays ANY for backward compatibility
         run: |
           node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/current-implicit-any.yml
-          echo "Known false negative reproduced: one of two providers was enough."
 
-      - name: Current evidence handling makes proven ANY partial
+      - name: ALL rejects a missing implementation in one related provider
         shell: bash
         run: |
           set +e
-          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/current-any-with-unavailable.yml
+          output=$(node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-all.yml --format json)
+          status=$?
+          set -e
+          echo "$output"
+
+          test "$status" -eq 1
+          echo "$output" | grep '"quantifier": "all"'
+          echo "$output" | grep '"missingRepositories": "replica"'
+
+      - name: ANY passes once one related provider proves the match
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-any-with-unavailable.yml
+
+      - name: ALL is PARTIAL when the only missing provider is unavailable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/quantifiers/explicit-all-with-unavailable.yml
           status=$?
           set -e
 
-          if [ "$status" -ne 3 ]; then
-            echo "Expected current PARTIAL exit 3, got $status"
-            exit 1
-          fi
-
-          echo "Known over-conservative PARTIAL reproduced."
+          test "$status" -eq 3

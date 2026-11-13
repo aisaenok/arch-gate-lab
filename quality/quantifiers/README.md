@@ -2,19 +2,22 @@
 
 A single contract is related to multiple providers.
 
-Two distinct semantics are needed:
+The architecture needs two distinct semantics:
 
-- **any** — at least one related repository must provide the matching fact;
-- **all** — every related repository must provide the matching fact.
+- `quantifier: any` — at least one related repository must provide the matching fact;
+- `quantifier: all` — every related repository must provide the matching fact.
 
-The current implementation has implicit existential matching but evidence coverage is
-computed for every related repository.
+If omitted, the quantifier defaults to `any` for backward compatibility.
 
-That creates two problems:
+Evidence is evaluated against the quantifier:
 
-1. a rule whose architectural meaning is "every related provider" silently behaves as
-   "any related provider";
-2. an existential rule becomes PARTIAL when one unrelated alternative has unavailable
-   evidence, even if another related repository already proves the match.
+- ANY + one proven match -> PASS, even if another alternative is unavailable;
+- ANY + no match + unknown alternative -> PARTIAL;
+- ANY + no match + complete evidence everywhere -> FAIL;
+- ALL + one completely analyzed missing repository -> FAIL;
+- ALL + only unknown missing repositories -> PARTIAL;
+- ALL + match in every related repository -> PASS.
 
-These fixtures characterize both behaviors before adding an explicit quantifier.
+This keeps repository topology separate from rule semantics: relations say which
+repositories are connected, while the rule says whether one or every related
+repository must satisfy the assertion.
