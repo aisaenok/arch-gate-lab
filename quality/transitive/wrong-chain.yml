@@ -57,9 +57,13 @@ rules:
           fact: contract-operation
           field: operationId
           repositoryRelation:
-            type: implemented-by
             currentField: providerRepositoryId
             candidateField: repositoryId
-            direction: incoming
+            path:
+              - type: forwards-to
+                direction: outgoing
+              - type: implemented-by
+                direction: incoming
+            quantifier: any
         message: Planned operation is not available through the selected provider topology
     targetField: operationId

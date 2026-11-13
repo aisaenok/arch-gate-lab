@@ -10,43 +10,42 @@ on:
       - ".github/workflows/transitive-topology.yml"
 
 jobs:
-  characterize:
+  relation-paths:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate relation paths
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/relation-paths
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Valid transitive provider chain is currently only PARTIAL
-        shell: bash
+      - name: Valid transitive provider chain passes
         run: |
-          set +e
           node .tools/arch-gate/dist/src/index.js plan ./quality/transitive/intent.json --config ./quality/transitive/valid-chain.yml
-          status=$?
-          set -e
-          test "$status" -eq 3
 
-      - name: Wrong transitive provider chain is also only PARTIAL
+      - name: Wrong transitive provider chain is rejected
         shell: bash
         run: |
           set +e
-          node .tools/arch-gate/dist/src/index.js plan ./quality/transitive/intent.json --config ./quality/transitive/wrong-chain.yml
+          output=$(node .tools/arch-gate/dist/src/index.js plan ./quality/transitive/intent.json --config ./quality/transitive/wrong-chain.yml --format json)
           status=$?
           set -e
-          test "$status" -eq 3
+
+          echo "$output"
+          test "$status" -eq 1
+          echo "$output" | grep '"rule": "PLAN_TOPO001"'
+          echo "$output" | grep '"relatedRepositories": "payments-contract"'
