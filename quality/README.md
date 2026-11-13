@@ -13,6 +13,8 @@ Expected behavior:
 | manual local DTO passed to generated client | FAIL API002 | the type actually crosses the generated API boundary |
 | extra endpoint hidden in generated frontend directory | FAIL API003 | generated HTTP operation is absent from OpenAPI |
 | JAX-RS backend endpoint absent from contract | FAIL API005 | backend endpoint facts are matched by normalized method + path |
+| OpenAPI operation without backend implementation | FAIL API006 | contract completeness is checked in the reverse direction |
+| OpenAPI operation without generated frontend runtime call | FAIL API007 | generated client completeness is checked in the reverse direction |
 | malformed JAX-RS source | PARTIAL / exit 3 | endpoint evidence is incomplete when Java parsing fails |
 | misspelled fact kind in policy | config error / exit 2 | unknown fact vocabulary is rejected |
 
