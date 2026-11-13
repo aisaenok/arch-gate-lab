@@ -17,11 +17,11 @@ jobs:
       - name: Checkout lab
         uses: actions/checkout@v4
 
-      - name: Checkout arch-gate repository relations
+      - name: Checkout arch-gate main
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: feat/repository-relations
+          ref: main
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
