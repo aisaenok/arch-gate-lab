@@ -1,0 +1,62 @@
+name: ts-function-values
+
+on:
+  push:
+    branches:
+      - test/ts-function-values
+  pull_request:
+    paths:
+      - "quality/scenarios/function-value-alias/**"
+      - "quality/scenarios/barrel-reexport/**"
+      - "quality/scenarios/callback-http/**"
+      - "quality/function-value-alias.yml"
+      - "quality/barrel-reexport.yml"
+      - "quality/callback-http.yml"
+      - ".github/workflows/ts-function-values.yml"
+
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Local function alias remains reachable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/function-value-alias.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Barrel re-export remains reachable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/barrel-reexport.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Callback function value currently false-passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/callback-http.yml
+          echo "Known false negative reproduced: callback execution is absent from the call graph."
