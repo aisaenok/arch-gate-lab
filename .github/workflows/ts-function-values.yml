@@ -23,11 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate callback reachability
+      - name: Checkout arch-gate main
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: feat/callback-reachability
+          ref: main
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
