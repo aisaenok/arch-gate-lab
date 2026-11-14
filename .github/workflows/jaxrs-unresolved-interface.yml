@@ -10,7 +10,7 @@ on:
       - ".github/workflows/jaxrs-unresolved-interface.yml"
 
 jobs:
-  characterize:
+  source-scope:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,15 +37,24 @@ jobs:
         run: |
           node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-unresolved/generated-in-scope.yml
 
-      - name: Unresolved implemented interface currently produces confident FAIL
+      - name: Generated interface excluded from configured scope fails
         shell: bash
         run: |
           set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-unresolved/generated-out-of-scope.yml
           status=$?
           set -e
+          test "$status" -eq 1
+
+      - name: Missing configured generated source currently false-fails
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-unresolved/generated-source-missing.yml
+          status=$?
+          set -e
 
           if [ "$status" -ne 1 ]; then
-            echo "Expected current FAIL exit 1, got $status"
+            echo "Expected current confident FAIL exit 1, got $status"
             exit 1
           fi
