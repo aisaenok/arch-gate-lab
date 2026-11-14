@@ -10,31 +10,33 @@ on:
       - "quality/scenarios/class-dispatch/**"
       - "quality/scenarios/interface-concrete/**"
       - "quality/scenarios/interface-parameter/**"
+      - "quality/scenarios/interface-parameter-safe/**"
       - "quality/object-dispatch.yml"
       - "quality/class-dispatch.yml"
       - "quality/interface-concrete.yml"
       - "quality/interface-parameter.yml"
+      - "quality/interface-parameter-safe.yml"
       - ".github/workflows/ts-dynamic-dispatch.yml"
 
 jobs:
-  characterize:
+  dispatch-reachability:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate interface dispatch
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/interface-dispatch-reachability
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
@@ -47,7 +49,6 @@ jobs:
           node .tools/arch-gate/dist/src/index.js check --config ./quality/object-dispatch.yml
           status=$?
           set -e
-          echo "OBJECT_STATUS=$status"
           test "$status" -eq 1
 
       - name: Concrete class dispatch remains reachable
@@ -57,23 +58,26 @@ jobs:
           node .tools/arch-gate/dist/src/index.js check --config ./quality/class-dispatch.yml
           status=$?
           set -e
-          echo "CLASS_STATUS=$status"
           test "$status" -eq 1
 
-      - name: Characterize interface-typed concrete dispatch
+      - name: Interface-typed concrete receiver resolves implementation
         shell: bash
         run: |
           set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/interface-concrete.yml
           status=$?
           set -e
-          echo "INTERFACE_CONCRETE_STATUS=$status"
+          test "$status" -eq 1
 
-      - name: Characterize interface parameter dispatch
+      - name: Unknown interface binding with HTTP implementation is PARTIAL
         shell: bash
         run: |
           set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/interface-parameter.yml
           status=$?
           set -e
-          echo "INTERFACE_PARAMETER_STATUS=$status"
+          test "$status" -eq 3
+
+      - name: Unknown interface binding with only safe implementation passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/interface-parameter-safe.yml
