@@ -1,0 +1,79 @@
+name: ts-dynamic-dispatch
+
+on:
+  push:
+    branches:
+      - test/ts-dynamic-dispatch
+  pull_request:
+    paths:
+      - "quality/scenarios/object-dispatch/**"
+      - "quality/scenarios/class-dispatch/**"
+      - "quality/scenarios/interface-concrete/**"
+      - "quality/scenarios/interface-parameter/**"
+      - "quality/object-dispatch.yml"
+      - "quality/class-dispatch.yml"
+      - "quality/interface-concrete.yml"
+      - "quality/interface-parameter.yml"
+      - ".github/workflows/ts-dynamic-dispatch.yml"
+
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Object property dispatch remains reachable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/object-dispatch.yml
+          status=$?
+          set -e
+          echo "OBJECT_STATUS=$status"
+          test "$status" -eq 1
+
+      - name: Concrete class dispatch remains reachable
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/class-dispatch.yml
+          status=$?
+          set -e
+          echo "CLASS_STATUS=$status"
+          test "$status" -eq 1
+
+      - name: Characterize interface-typed concrete dispatch
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/interface-concrete.yml
+          status=$?
+          set -e
+          echo "INTERFACE_CONCRETE_STATUS=$status"
+
+      - name: Characterize interface parameter dispatch
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/interface-parameter.yml
+          status=$?
+          set -e
+          echo "INTERFACE_PARAMETER_STATUS=$status"
