@@ -8,8 +8,10 @@ on:
     paths:
       - "quality/scenarios/axios-create-instance/**"
       - "quality/scenarios/axios-create-method-alias/**"
+      - "quality/scenarios/axios-create-only/**"
       - "quality/axios-create-instance.yml"
       - "quality/axios-create-method-alias.yml"
+      - "quality/axios-create-only.yml"
       - ".github/workflows/http-client-factories.yml"
 
 jobs:
@@ -35,6 +37,10 @@ jobs:
         run: |
           npm install
           npm test
+
+      - name: Axios create alone is not treated as HTTP
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/axios-create-only.yml
 
       - name: Axios create instance extra endpoint is rejected
         shell: bash
