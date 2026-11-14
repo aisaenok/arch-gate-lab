@@ -9,30 +9,32 @@ on:
       - "quality/scenarios/function-value-alias/**"
       - "quality/scenarios/barrel-reexport/**"
       - "quality/scenarios/callback-http/**"
+      - "quality/scenarios/unknown-callback/**"
       - "quality/function-value-alias.yml"
       - "quality/barrel-reexport.yml"
       - "quality/callback-http.yml"
+      - "quality/unknown-callback.yml"
       - ".github/workflows/ts-function-values.yml"
 
 jobs:
-  characterize:
+  callback-reachability:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate callback reachability
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/callback-reachability
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
@@ -56,7 +58,20 @@ jobs:
           set -e
           test "$status" -eq 1
 
-      - name: Callback function value currently false-passes
+      - name: Array callback function value is reachable
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/callback-http.yml
-          echo "Known false negative reproduced: callback execution is absent from the call graph."
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Unknown callback execution is PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/unknown-callback.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
