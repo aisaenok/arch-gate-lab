@@ -1,0 +1,66 @@
+name: generated-runtime-identification
+
+on:
+  push:
+    branches:
+      - test/generated-runtime-identification
+  pull_request:
+    paths:
+      - "quality/scenarios/generated-dynamic-route/**"
+      - "quality/scenarios/generated-fetch-alias/**"
+      - "quality/scenarios/generated-axios-alias/**"
+      - "quality/generated-dynamic-route.yml"
+      - "quality/generated-fetch-alias.yml"
+      - "quality/generated-axios-alias.yml"
+      - ".github/workflows/generated-runtime-identification.yml"
+
+jobs:
+  transport-identification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Direct dynamic fetch is rejected by API004
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-dynamic-route.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Fetch alias extra endpoint is rejected by API003
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-fetch-alias.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Axios alias extra endpoint is rejected by API003
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-axios-alias.yml
+          status=$?
+          set -e
+          test "$status" -eq 1

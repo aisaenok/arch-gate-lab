@@ -1,0 +1,31 @@
+repositories:
+  frontend:
+    type: typescript
+    root: ./scenarios/generated-dynamic-route
+    roles: [api-consumer]
+    sourceDir: src
+    generatedRuntimeDirs:
+      - src/shared/api/generated
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules:
+      - axios
+
+rules:
+  - id: API004
+    description: Generated runtime HTTP routes must be statically identifiable
+    scope: check
+    select:
+      fact: http-call
+      repositoryRoles:
+        - field: repositoryId
+          role: api-consumer
+      where:
+        - field: sourceGenerated
+          equals: true
+    assert:
+      - field: operationKeyKnown
+        equals: true
+        message: Generated runtime HTTP call has an unresolved method/path
+    sourceField: source
+    targetField: transport
