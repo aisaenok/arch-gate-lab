@@ -1,0 +1,48 @@
+name: jaxrs-interface
+
+on:
+  push:
+    branches:
+      - test/jaxrs-interface-inheritance
+  pull_request:
+    paths:
+      - "quality/jaxrs-interface/**"
+      - ".github/workflows/jaxrs-interface.yml"
+
+jobs:
+  inherited-endpoints:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Interface-only declaration is not a backend implementation
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-interface/interface-only.yml
+          status=$?
+          set -e
+
+          test "$status" -eq 1
+
+      - name: Concrete implementation inherits interface endpoint metadata
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-interface/inherited.yml
