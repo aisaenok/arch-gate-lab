@@ -1,0 +1,58 @@
+name: generated-runtime-identification
+
+on:
+  push:
+    branches:
+      - test/generated-runtime-identification
+  pull_request:
+    paths:
+      - "quality/scenarios/generated-dynamic-route/**"
+      - "quality/scenarios/generated-fetch-alias/**"
+      - "quality/scenarios/generated-axios-alias/**"
+      - "quality/generated-dynamic-route.yml"
+      - "quality/generated-fetch-alias.yml"
+      - "quality/generated-axios-alias.yml"
+      - ".github/workflows/generated-runtime-identification.yml"
+
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Direct dynamic fetch is rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-dynamic-route.yml
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Fetch alias currently false-passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-fetch-alias.yml
+          echo "Known false green reproduced: fetch alias is not emitted as http-call."
+
+      - name: Axios alias currently false-passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-axios-alias.yml
+          echo "Known false green reproduced: configured transport alias is not emitted as http-call."
