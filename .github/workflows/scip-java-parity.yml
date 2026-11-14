@@ -33,11 +33,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
-          npm run build
+          npm test
 
       - name: Install SCIP CLI
         shell: bash
