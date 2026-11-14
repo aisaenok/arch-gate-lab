@@ -1,0 +1,113 @@
+name: scip-feasibility
+
+on:
+  push:
+    branches:
+      - spike/scip-feasibility
+  pull_request:
+    paths:
+      - "quality/scip-spike/**"
+      - ".github/workflows/scip-feasibility.yml"
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install SCIP CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scip-bin"
+          curl -fsSL             https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz             | tar xzf - -C "$RUNNER_TEMP/scip-bin" scip
+          echo "$RUNNER_TEMP/scip-bin" >> "$GITHUB_PATH"
+
+      - name: Install scip-typescript
+        run: npm install --global @sourcegraph/scip-typescript@0.4.0
+
+      - name: Install fixture dependencies
+        working-directory: quality/scip-spike/typescript
+        run: npm install
+
+      - name: Build TypeScript SCIP index
+        working-directory: quality/scip-spike/typescript
+        run: scip-typescript index
+
+      - name: Validate and snapshot TypeScript index
+        working-directory: quality/scip-spike/typescript
+        shell: bash
+        run: |
+          set -euo pipefail
+          scip lint index.scip
+          scip snapshot --from index.scip --to scip-snapshot --strict
+          scip stats --from index.scip > scip-stats.txt
+
+          echo "===== usage.ts ====="
+          cat scip-snapshot/src/usage.ts
+          echo "===== types.ts ====="
+          cat scip-snapshot/src/types.ts
+          echo "===== axios.ts ====="
+          cat scip-snapshot/src/axios.ts
+
+          grep -q "relationship implementation" scip-snapshot/src/types.ts
+
+      - name: Upload TypeScript SCIP evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: scip-typescript-evidence
+          path: |
+            quality/scip-spike/typescript/index.scip
+            quality/scip-spike/typescript/scip-snapshot
+            quality/scip-spike/typescript/scip-stats.txt
+
+  java:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SCIP CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scip-bin"
+          curl -fsSL             https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz             | tar xzf - -C "$RUNNER_TEMP/scip-bin" scip
+          echo "$RUNNER_TEMP/scip-bin" >> "$GITHUB_PATH"
+
+      - name: Build Java SCIP index with compiler-backed indexer
+        working-directory: quality/scip-spike/java
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm             -v "$PWD:/sources"             --env JVM_VERSION=21             ghcr.io/scip-code/scip-java:v0.14.2             scip-java index
+
+      - name: Validate and snapshot Java index
+        working-directory: quality/scip-spike/java
+        shell: bash
+        run: |
+          set -euo pipefail
+          scip lint index.scip
+          scip snapshot --from index.scip --to scip-snapshot --strict
+          scip stats --from index.scip > scip-stats.txt
+
+          echo "===== ApplicationApi.java ====="
+          cat scip-snapshot/src/main/java/dev/archgate/api/ApplicationApi.java
+          echo "===== ApplicationController.java ====="
+          cat scip-snapshot/src/main/java/dev/archgate/ApplicationController.java
+
+          grep -q "relationship implementation"             scip-snapshot/src/main/java/dev/archgate/ApplicationController.java
+
+      - name: Upload Java SCIP evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: scip-java-evidence
+          path: |
+            quality/scip-spike/java/index.scip
+            quality/scip-spike/java/scip-snapshot
+            quality/scip-spike/java/scip-stats.txt
