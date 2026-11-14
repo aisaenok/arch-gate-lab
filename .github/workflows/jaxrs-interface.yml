@@ -10,34 +10,39 @@ on:
       - ".github/workflows/jaxrs-interface.yml"
 
 jobs:
-  characterize:
+  inherited-endpoints:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate JAX-RS interface implementations
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/jaxrs-interface-implementations
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Interface-only declaration currently false-passes
+      - name: Interface-only declaration is not a backend implementation
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-interface/interface-only.yml
-          echo "Known false green reproduced: annotated interface counted as backend implementation."
+          status=$?
+          set -e
 
-      - name: Annotated interface plus implementation also passes
+          test "$status" -eq 1
+
+      - name: Concrete implementation inherits interface endpoint metadata
         run: |
           node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-interface/inherited.yml
