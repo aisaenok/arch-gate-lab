@@ -1,28 +1,36 @@
 # Generated runtime HTTP identification
 
-These scenarios separate route identification from contract membership.
+These scenarios separate route identification from transport identification.
 
-1. Direct dynamic fetch:
-   ```ts
-   fetch(url)
-   ```
-   The transport is known but the route is not. API004 should FAIL.
+## Direct dynamic route
 
-2. Fetch alias:
-   ```ts
-   const request = fetch;
-   request(`/api/applications/${id}`);
-   ```
-   The route is statically identifiable, but the current analyzer may fail to recognize
-   that `request` is the fetch transport at all.
+```ts
+fetch(url)
+```
 
-3. Axios alias:
-   ```ts
-   import axios from "axios";
-   const client = axios;
-   client.get(`/api/applications/${id}`);
-   ```
-   Same issue for a configured HTTP module alias.
+The transport is known but the route is not. API004 must reject it.
 
-A missing `http-call` fact is more dangerous than an unresolved operation key: API004
-cannot reject what the analyzer never recognized as HTTP.
+## Fetch alias
+
+```ts
+const request = fetch;
+request("/api/admin");
+```
+
+The route is statically known, but `/api/admin` is absent from OpenAPI. The analyzer
+must preserve fetch provenance through the alias so API003 can reject the extra
+generated endpoint.
+
+## Configured module alias
+
+```ts
+import axios from "axios";
+const client = axios;
+client.get("/api/admin");
+```
+
+The same requirement applies to configured HTTP modules. A transport alias must not
+make the generated call disappear from `http-call`.
+
+This distinction matters because API004 can only validate calls that exist as facts;
+transport identification must happen before route/contract rules can do their job.

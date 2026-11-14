@@ -15,30 +15,30 @@ on:
       - ".github/workflows/generated-runtime-identification.yml"
 
 jobs:
-  characterize:
+  transport-identification:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate transport aliases
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/transport-aliases
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Direct dynamic fetch is rejected
+      - name: Direct dynamic fetch is rejected by API004
         shell: bash
         run: |
           set +e
@@ -47,12 +47,20 @@ jobs:
           set -e
           test "$status" -eq 1
 
-      - name: Fetch alias currently false-passes
+      - name: Fetch alias extra endpoint is rejected by API003
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-fetch-alias.yml
-          echo "Known false green reproduced: fetch alias is not emitted as http-call."
+          status=$?
+          set -e
+          test "$status" -eq 1
 
-      - name: Axios alias currently false-passes
+      - name: Axios alias extra endpoint is rejected by API003
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/generated-axios-alias.yml
-          echo "Known false green reproduced: configured transport alias is not emitted as http-call."
+          status=$?
+          set -e
+          test "$status" -eq 1
