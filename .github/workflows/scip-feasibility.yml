@@ -37,6 +37,10 @@ jobs:
         working-directory: quality/scip-spike/typescript
         run: npm install
 
+      - name: Install SCIP consumer dependencies
+        working-directory: quality/scip-spike/consumer
+        run: npm install
+
       - name: Build TypeScript SCIP index
         working-directory: quality/scip-spike/typescript
         run: scip-typescript index
@@ -49,6 +53,7 @@ jobs:
           scip lint index.scip > scip-lint.txt 2>&1 || true
           scip snapshot --strict=false --from index.scip --to scip-snapshot
           scip stats --from index.scip > scip-stats.txt
+          node ../consumer/inspect-index.mjs index.scip scip-summary.json
 
           echo "===== usage.ts ====="
           cat scip-snapshot/src/usage.ts
@@ -69,6 +74,7 @@ jobs:
             quality/scip-spike/typescript/scip-snapshot
             quality/scip-spike/typescript/scip-stats.txt
             quality/scip-spike/typescript/scip-lint.txt
+            quality/scip-spike/typescript/scip-summary.json
 
   java:
     runs-on: ubuntu-latest
@@ -80,6 +86,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Install SCIP CLI
         shell: bash
@@ -100,6 +110,10 @@ jobs:
           chmod +x "$RUNNER_TEMP/coursier-bin/coursier"
           echo "$RUNNER_TEMP/coursier-bin" >> "$GITHUB_PATH"
 
+      - name: Install SCIP consumer dependencies
+        working-directory: quality/scip-spike/consumer
+        run: npm install
+
       - name: Build Java SCIP index with compiler-backed indexer
         working-directory: quality/scip-spike/java
         shell: bash
@@ -117,6 +131,7 @@ jobs:
           scip lint index.scip > scip-lint.txt 2>&1 || true
           scip snapshot --strict=false --from index.scip --to scip-snapshot
           scip stats --from index.scip > scip-stats.txt
+          node ../consumer/inspect-index.mjs index.scip scip-summary.json
 
           echo "===== ApplicationApi.java ====="
           cat scip-snapshot/src/main/java/dev/archgate/api/ApplicationApi.java
@@ -136,3 +151,4 @@ jobs:
             quality/scip-spike/java/scip-snapshot
             quality/scip-spike/java/scip-stats.txt
             quality/scip-spike/java/scip-lint.txt
+            quality/scip-spike/java/scip-summary.json
