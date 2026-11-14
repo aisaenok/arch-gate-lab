@@ -1,0 +1,51 @@
+name: jaxrs-unresolved-interface
+
+on:
+  push:
+    branches:
+      - test/jaxrs-unresolved-interface-evidence
+  pull_request:
+    paths:
+      - "quality/jaxrs-unresolved/**"
+      - ".github/workflows/jaxrs-unresolved-interface.yml"
+
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Generated interface included in sourceDirs passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-unresolved/generated-in-scope.yml
+
+      - name: Unresolved implemented interface currently produces confident FAIL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-unresolved/generated-out-of-scope.yml
+          status=$?
+          set -e
+
+          if [ "$status" -ne 1 ]; then
+            echo "Expected current FAIL exit 1, got $status"
+            exit 1
+          fi
