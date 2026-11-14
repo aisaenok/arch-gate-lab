@@ -1,0 +1,51 @@
+name: transitive-topology
+
+on:
+  push:
+    branches:
+      - test/transitive-topology
+  pull_request:
+    paths:
+      - "quality/transitive/**"
+      - ".github/workflows/transitive-topology.yml"
+
+jobs:
+  relation-paths:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Valid transitive provider chain passes
+        run: |
+          node .tools/arch-gate/dist/src/index.js plan ./quality/transitive/intent.json --config ./quality/transitive/valid-chain.yml
+
+      - name: Wrong transitive provider chain is rejected
+        shell: bash
+        run: |
+          set +e
+          output=$(node .tools/arch-gate/dist/src/index.js plan ./quality/transitive/intent.json --config ./quality/transitive/wrong-chain.yml --format json)
+          status=$?
+          set -e
+
+          echo "$output"
+          test "$status" -eq 1
+          echo "$output" | grep '"rule": "PLAN_TOPO001"'
+          echo "$output" | grep '"relatedRepositories": "payments-contract"'
