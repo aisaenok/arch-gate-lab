@@ -1,0 +1,94 @@
+name: scip-java-parity
+
+on:
+  push:
+    branches:
+      - test/scip-java-real-parity
+  pull_request:
+    paths:
+      - "quality/scip-java-parity/**"
+      - ".github/workflows/scip-java-parity.yml"
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lab
+        uses: actions/checkout@v4
+
+      - name: Checkout arch-gate
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: fix/scip-local-symbol-scope
+          path: .tools/arch-gate
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Install SCIP CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scip-bin"
+          curl -fsSL \
+            https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz \
+            | tar xzf - -C "$RUNNER_TEMP/scip-bin" scip
+          echo "$RUNNER_TEMP/scip-bin" >> "$GITHUB_PATH"
+
+      - name: Install Coursier
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/coursier-bin"
+          curl -fsLo "$RUNNER_TEMP/coursier-bin/coursier" https://git.io/coursier-cli
+          chmod +x "$RUNNER_TEMP/coursier-bin/coursier"
+          echo "$RUNNER_TEMP/coursier-bin" >> "$GITHUB_PATH"
+
+      - name: Build real scip-java index
+        working-directory: quality/scip-java-parity/fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          coursier launch org.scip-code:scip-java:0.14.2 \
+            -M org.scip_code.scip_java.ScipJava \
+            -- index
+
+      - name: Compare real SCIP semantics with manual resolver
+        run: node quality/scip-java-parity/compare.mjs
+
+      - name: Snapshot SCIP evidence
+        working-directory: quality/scip-java-parity/fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          scip snapshot --strict=false --from index.scip --to scip-snapshot
+          scip stats --from index.scip > scip-stats.txt
+
+          echo "===== BaseApi.java ====="
+          cat scip-snapshot/src/main/java/dev/archgate/api/BaseApi.java
+          echo "===== ApplicationController.java ====="
+          cat scip-snapshot/src/main/java/dev/archgate/ApplicationController.java
+
+      - name: Upload SCIP parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scip-java-parity-evidence
+          path: |
+            quality/scip-java-parity/fixture/index.scip
+            quality/scip-java-parity/fixture/scip-snapshot
+            quality/scip-java-parity/fixture/scip-stats.txt
