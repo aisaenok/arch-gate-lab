@@ -57,7 +57,7 @@ jobs:
           echo "===== axios.ts ====="
           cat scip-snapshot/src/axios.ts
 
-          grep -q "relationship implementation" scip-snapshot/src/types.ts
+          grep -Eq "relationship .* implementation" scip-snapshot/src/types.ts
 
       - name: Upload TypeScript SCIP evidence
         if: always()
@@ -105,7 +105,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          coursier launch org.scip-code:scip-java:0.14.2 -- index
+          coursier launch org.scip-code:scip-java:0.14.2 \
+            -M org.scip_code.scip_java.ScipJava \
+            -- index
 
       - name: Snapshot Java index
         working-directory: quality/scip-spike/java
@@ -121,7 +123,7 @@ jobs:
           echo "===== ApplicationController.java ====="
           cat scip-snapshot/src/main/java/dev/archgate/ApplicationController.java
 
-          grep -q "relationship implementation" \
+          grep -Eq "relationship .* implementation" \
             scip-snapshot/src/main/java/dev/archgate/ApplicationController.java
 
       - name: Upload Java SCIP evidence
