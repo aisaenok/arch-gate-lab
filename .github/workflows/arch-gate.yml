@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: feat/relation-paths
+          ref: main
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
