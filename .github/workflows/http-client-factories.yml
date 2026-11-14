@@ -13,35 +13,43 @@ on:
       - ".github/workflows/http-client-factories.yml"
 
 jobs:
-  characterize:
+  factory-provenance:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout arch-gate main
+      - name: Checkout arch-gate HTTP client factories
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/http-client-factories
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build arch-gate
+      - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
           npm install
           npm test
 
-      - name: Axios create instance currently false-passes
+      - name: Axios create instance extra endpoint is rejected
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/axios-create-instance.yml
-          echo "Known false green reproduced: axios.create() instance loses transport provenance."
+          status=$?
+          set -e
+          test "$status" -eq 1
 
-      - name: Axios create method alias currently false-passes
+      - name: Axios create method alias extra endpoint is rejected
+        shell: bash
         run: |
+          set +e
           node .tools/arch-gate/dist/src/index.js check --config ./quality/axios-create-method-alias.yml
-          echo "Known false green reproduced: method alias from axios.create() instance is invisible."
+          status=$?
+          set -e
+          test "$status" -eq 1
