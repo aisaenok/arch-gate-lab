@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Applications API
+  version: 1.0.0
+paths:
+  /api/applications/{id}:
+    get:
+      operationId: getApplication
+      responses:
+        "200":
+          description: Application
