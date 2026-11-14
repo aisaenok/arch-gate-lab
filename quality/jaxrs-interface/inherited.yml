@@ -1,13 +1,13 @@
 repositories:
   contracts:
     type: openapi
-    root: ./jaxrs-interface/contracts
+    root: ./contracts
     roles: [api-contract]
     openapi: openapi.yaml
 
   backend:
     type: java
-    root: ./jaxrs-interface/inherited
+    root: ./inherited
     roles: [api-provider]
     sourceDirs:
       - src/main/java
