@@ -1,0 +1,50 @@
+name: http-reachability
+
+on:
+  push:
+    branches:
+      - test/http-call-reachability
+  pull_request:
+    paths:
+      - "quality/scenarios/false-positive-unused-wrapper/**"
+      - "quality/false-positive-unused-wrapper.yml"
+      - "quality/false-negative-wrapper-bypass.yml"
+      - ".github/workflows/http-reachability.yml"
+
+jobs:
+  call-reachability:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout arch-gate main
+        uses: actions/checkout@v4
+        with:
+          repository: aisaenok/arch-gate
+          ref: main
+          path: .tools/arch-gate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and test arch-gate
+        working-directory: .tools/arch-gate
+        run: |
+          npm install
+          npm test
+
+      - name: Unused wrapper import does not imply HTTP reachability
+        run: |
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-unused-wrapper.yml
+
+      - name: Actual wrapper call is still rejected
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/false-negative-wrapper-bypass.yml
+          status=$?
+          set -e
+
+          test "$status" -eq 1
