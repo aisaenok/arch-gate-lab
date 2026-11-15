@@ -32,6 +32,17 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install scip-typescript
+        run: npm install --global @sourcegraph/scip-typescript@0.4.0
+
+      - name: Build TypeScript SCIP indexes
+        shell: bash
+        run: |
+          bash quality/build-typescript-scip-indexes.sh \
+            quality/scenarios/generated-dynamic-route \
+            quality/scenarios/generated-fetch-alias \
+            quality/scenarios/generated-axios-alias
+
       - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |

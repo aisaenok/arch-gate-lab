@@ -66,6 +66,17 @@ jobs:
           scip-typescript index
           test -s index.scip
 
+      - name: Build quality TypeScript SCIP indexes
+        shell: bash
+        run: |
+          bash quality/build-typescript-scip-indexes.sh \
+            quality/scenarios/false-positive-unused-axios \
+            quality/scenarios/false-positive-generated-alias \
+            quality/scenarios/false-negative-renamed-dto \
+            quality/scenarios/false-negative-wrapper-bypass \
+            quality/scenarios/manual-boundary-dto \
+            quality/scenarios/false-negative-generated-extra-endpoint
+
       - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |

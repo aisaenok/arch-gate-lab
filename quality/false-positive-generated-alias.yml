@@ -9,6 +9,7 @@ repositories:
     allowDirectHttpDirs: []
     allowManualContractTypeDirs: []
     httpModules: [axios]
+    scipIndex: index.scip
 
 rules:
   - id: API002
