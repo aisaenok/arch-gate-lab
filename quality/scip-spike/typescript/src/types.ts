@@ -8,3 +8,11 @@ export class FetchClient implements HttpClient {
     return response.json();
   }
 }
+
+
+export class StructuralClient {
+  async get(url: string): Promise<unknown> {
+    const response = await fetch(url);
+    return response.json();
+  }
+}
