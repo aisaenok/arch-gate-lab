@@ -18,4 +18,4 @@ Expected behavior:
 | malformed JAX-RS source | PARTIAL / exit 3 | endpoint evidence is incomplete when Java parsing fails |
 | misspelled fact kind in policy | config error / exit 2 | unknown fact vocabulary is rejected |
 
-The Java analyzer only claims complete backend endpoint evidence when the repository explicitly declares `frameworks: [jax-rs]`. It parses Java CST, extracts class/method `@Path` plus HTTP-method annotations, and normalizes them to the same operation key used by OpenAPI.
+The Java analyzer interprets JAX-RS annotations and paths from Java CST, while interface-to-implementation resolution comes from the repository's SCIP index. The normal CI generates a real `services/backend/index.scip` with `scip-java` before running these scenarios. Direct class endpoints remain AST-local; interface endpoint coverage is only complete when SCIP semantic evidence is available.
