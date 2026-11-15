@@ -57,6 +57,31 @@ jobs:
           scip-typescript index
           test -s index.scip
 
+      - name: Inspect invalid HTTP SCIP evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scip-bin"
+          curl -fsSL \
+            https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz \
+            | tar xzf - -C "$RUNNER_TEMP/scip-bin" scip
+          "$RUNNER_TEMP/scip-bin/scip" snapshot \
+            --strict=false \
+            --from apps/frontend/index.scip \
+            --to "$RUNNER_TEMP/frontend-scip"
+          echo "===== invalid-http documents ====="
+          find "$RUNNER_TEMP/frontend-scip" -type f \
+            | sort \
+            | grep 'invalid-http' || true
+          target="$(find "$RUNNER_TEMP/frontend-scip" -type f \
+            | grep 'invalid-http/.*/loadApplication.ts' \
+            | head -n 1 || true)"
+          if [ -n "$target" ]; then
+            echo "===== $target ====="
+            cat "$target"
+          fi
+
+
       - name: Build arch-gate
         working-directory: .tools/arch-gate
         run: |
