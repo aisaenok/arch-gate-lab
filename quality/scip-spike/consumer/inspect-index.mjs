@@ -38,6 +38,11 @@ const documents = index.documents.map((document) => {
     occurrenceCount: document.occurrences.length,
     symbolCount: document.symbols.length,
     occurrenceSymbols,
+    occurrences: document.occurrences.map((occurrence) => ({
+      range: occurrence.range,
+      symbol: occurrence.symbol,
+      symbolRoles: occurrence.symbolRoles
+    })),
     implementationRelationships
   };
 });
