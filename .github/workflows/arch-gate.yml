@@ -19,9 +19,33 @@ jobs:
           ref: main
           path: .tools/arch-gate
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Install Coursier
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/coursier-bin"
+          curl -fsLo "$RUNNER_TEMP/coursier-bin/coursier" https://git.io/coursier-cli
+          chmod +x "$RUNNER_TEMP/coursier-bin/coursier"
+          echo "$RUNNER_TEMP/coursier-bin" >> "$GITHUB_PATH"
+
+      - name: Build backend SCIP index
+        working-directory: services/backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          coursier launch org.scip-code:scip-java:0.14.2 \
+            -M org.scip_code.scip_java.ScipJava \
+            -- index
+          test -s index.scip
 
       - name: Build arch-gate
         working-directory: .tools/arch-gate
