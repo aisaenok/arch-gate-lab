@@ -5,6 +5,9 @@ import {
   analyzeJavaRepository
 } from "../../.tools/arch-gate/dist/src/analyzers/java.js";
 import {
+  buildArchitectureModel
+} from "../../.tools/arch-gate/dist/src/engine.js";
+import {
   compareJavaImplementationParityWithScip
 } from "../../.tools/arch-gate/dist/src/scip/java-shadow.js";
 import {
@@ -88,4 +91,67 @@ assert.ok(
 assert.ok(
   missed.length >= 1,
   "expected SCIP to expose an implementation missed by the manual resolver"
+);
+
+
+const authoritativeRepository = {
+  ...repository,
+  scipIndexFile: path.join(fixtureRoot, "index.scip")
+};
+
+const authoritativeModel = await buildArchitectureModel({
+  configFile: "scip-java-parity",
+  repositories: {
+    backend: authoritativeRepository
+  },
+  relations: [],
+  rules: []
+});
+
+const authoritativeFacts = authoritativeModel.facts.filter(
+  (fact) => fact.kind === "backend-endpoint"
+);
+
+console.log(
+  JSON.stringify(
+    {
+      authoritativeFacts,
+      authoritativeDiagnostics:
+        authoritativeModel.diagnostics ?? [],
+      authoritativeEvidence:
+        authoritativeModel.evidence
+    },
+    null,
+    2
+  )
+);
+
+assert.equal(
+  authoritativeFacts.length,
+  1,
+  "SCIP-authoritative normal pipeline must emit the inherited endpoint"
+);
+assert.equal(
+  authoritativeFacts[0]?.className,
+  "ApplicationController"
+);
+assert.equal(
+  authoritativeFacts[0]?.operationKey,
+  "GET /api/applications/{}"
+);
+assert.equal(
+  authoritativeFacts[0]?.sourceFile,
+  "src/main/java/dev/archgate/ApplicationController.java"
+);
+assert.equal(
+  authoritativeModel.evidence[0]?.status,
+  "complete"
+);
+assert.ok(
+  (authoritativeModel.diagnostics ?? []).some(
+    (diagnostic) =>
+      diagnostic.code ===
+      "SCIP_JAVA_MANUAL_RESOLUTION_MISSING"
+  ),
+  "shadow diagnostic must still record the legacy resolver false negative"
 );
