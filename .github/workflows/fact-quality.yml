@@ -56,6 +56,16 @@ jobs:
             -- index
           test -s index.scip
 
+      - name: Build frontend SCIP index
+        working-directory: apps/frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save typescript@5.9.3
+          npm install --global @sourcegraph/scip-typescript@0.4.0
+          scip-typescript index
+          test -s index.scip
+
       - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |

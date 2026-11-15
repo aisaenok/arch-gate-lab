@@ -47,13 +47,20 @@ workspace/
   arch-gate-lab/
 ```
 
-Build the tool and generate the backend SCIP index:
+Build the tool and generate the Java + TypeScript SCIP indexes:
 
 ```bash
 cd ../arch-gate
 npm install
 npm run build
 cd ../arch-gate-lab
+
+# TypeScript semantic index.
+cd apps/frontend
+npm install --no-save typescript@5.9.3
+npm install --global @sourcegraph/scip-typescript@0.4.0
+scip-typescript index
+cd ../..
 
 # Java 21 is required.
 # With Coursier installed:
@@ -89,4 +96,4 @@ node ../arch-gate/dist/src/index.js plan ./plans/invalid-wire-source.json --conf
 node ../arch-gate/dist/src/index.js plan ./plans/invalid-operation.json --config ./arch-gate.yml
 ```
 
-GitHub Actions checks out `aisaenok/arch-gate` separately, generates `services/backend/index.scip` with `scip-java`, builds the tool, and runs the same scenarios against this repository.
+GitHub Actions checks out `aisaenok/arch-gate` separately, generates `apps/frontend/index.scip` with `scip-typescript` and `services/backend/index.scip` with `scip-java`, builds the tool, and runs the same scenarios against this repository.

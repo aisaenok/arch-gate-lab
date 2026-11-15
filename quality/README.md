@@ -19,3 +19,6 @@ Expected behavior:
 | misspelled fact kind in policy | config error / exit 2 | unknown fact vocabulary is rejected |
 
 The Java analyzer interprets JAX-RS annotations and paths from Java CST, while interface-to-implementation resolution comes from the repository's SCIP index. The normal CI generates a real `services/backend/index.scip` with `scip-java` before running these scenarios. Direct class endpoints remain AST-local; interface endpoint coverage is only complete when SCIP semantic evidence is available.
+
+
+For TypeScript repositories, the normal CI also generates a real `apps/frontend/index.scip` with `scip-typescript`. Module dependency resolution uses SCIP module-specifier symbols when the index is configured; execution/value-flow semantics remain in arch-gate.
