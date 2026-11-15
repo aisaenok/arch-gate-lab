@@ -12,6 +12,13 @@ for project in "$@"; do
     exit 1
   fi
 
+  if grep -RqsE 'from[[:space:]]+["'\''']axios["'\''']|require\(["'\''']axios["'\''']\)' "$project/src"; then
+    (
+      cd "$project"
+      npm install --no-save axios@1.7.9
+    )
+  fi
+
   if [ ! -f "$project/tsconfig.json" ]; then
     cat > "$project/tsconfig.json" <<'JSON'
 {
