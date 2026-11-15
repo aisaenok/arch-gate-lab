@@ -10,6 +10,7 @@ repositories:
     allowManualContractTypeDirs: []
     httpModules:
       - axios
+    scipIndex: index.scip
 
 rules:
   - id: API001
