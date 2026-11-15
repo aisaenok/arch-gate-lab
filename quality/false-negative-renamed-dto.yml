@@ -8,6 +8,7 @@ repositories:
     allowDirectHttpDirs: []
     allowManualContractTypeDirs: []
     httpModules: [axios]
+    scipIndex: index.scip
 
 rules:
   - id: NO_BOUNDARY_RULE
