@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm install --no-save typescript@5.9.3
+          npm install --no-save typescript@5.9.3 axios@1.7.9
           npm install --global @sourcegraph/scip-typescript@0.4.0
           scip-typescript index
           test -s index.scip
