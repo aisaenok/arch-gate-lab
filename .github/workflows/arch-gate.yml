@@ -1,4 +1,5 @@
 name: architecture-gate
+# validates latest arch-gate workspace loader head
 
 on:
   push:
