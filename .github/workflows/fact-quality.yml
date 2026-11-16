@@ -77,6 +77,30 @@ jobs:
             quality/scenarios/manual-boundary-dto \
             quality/scenarios/false-negative-generated-extra-endpoint
 
+      - name: Inspect generated alias SCIP provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scip-bin"
+          curl -fsSL \
+            https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz \
+            | tar xzf - -C "$RUNNER_TEMP/scip-bin" scip
+          "$RUNNER_TEMP/scip-bin/scip" snapshot \
+            --strict=false \
+            --from quality/scenarios/false-positive-generated-alias/index.scip \
+            --to "$RUNNER_TEMP/generated-alias-scip"
+          echo "===== snapshot files ====="
+          find "$RUNNER_TEMP/generated-alias-scip" -type f | sort
+          echo "===== fixture index.ts ====="
+          cat "$RUNNER_TEMP/generated-alias-scip/src/index.ts"
+          echo "===== generated model docs ====="
+          find "$RUNNER_TEMP/generated-alias-scip" -type f \
+            | grep 'generated/models.ts' \
+            | while read -r file; do
+                echo "===== $file ====="
+                cat "$file"
+              done
+
       - name: Build and test arch-gate
         working-directory: .tools/arch-gate
         run: |
