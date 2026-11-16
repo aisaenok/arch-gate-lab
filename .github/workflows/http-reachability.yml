@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/scip-cross-repo-type-provenance
           path: .tools/arch-gate
 
       - uses: actions/setup-node@v4
