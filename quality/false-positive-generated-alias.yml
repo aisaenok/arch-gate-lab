@@ -11,6 +11,18 @@ repositories:
     httpModules: [axios]
     scipIndex: index.scip
 
+  generated-client:
+    type: typescript
+    root: ../apps/frontend
+    roles: [generated-client]
+    sourceDir: src/shared/api/generated
+    generatedRuntimeDirs:
+      - src/shared/api/generated
+    allowDirectHttpDirs: []
+    allowManualContractTypeDirs: []
+    httpModules: [axios]
+    scipIndex: index.scip
+
 rules:
   - id: API002
     description: Generated API boundary requires generated type provenance
