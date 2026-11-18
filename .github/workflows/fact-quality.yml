@@ -92,6 +92,15 @@ jobs:
       - name: Alias to generated DTO preserves provenance
         run: node .tools/arch-gate/dist/src/index.js check --config ./quality/false-positive-generated-alias.yml
 
+      - name: Missing generated DTO owner produces PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/missing-generated-owner.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
+
       - name: Ambiguous generated DTO owner produces PARTIAL
         shell: bash
         run: |
