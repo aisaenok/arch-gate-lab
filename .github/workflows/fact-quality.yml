@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aisaenok/arch-gate
-          ref: main
+          ref: feat/java-scip-cross-repo-interface
           path: .tools/arch-gate
 
       - uses: actions/setup-java@v4
@@ -55,6 +55,28 @@ jobs:
             -M org.scip_code.scip_java.ScipJava \
             -- index
           test -s index.scip
+
+      - name: Build cross-repository Java SCIP indexes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -q -f quality/jaxrs-federation/api/pom.xml install -DskipTests
+
+          (
+            cd quality/jaxrs-federation/api
+            coursier launch org.scip-code:scip-java:0.14.2 \
+              -M org.scip_code.scip_java.ScipJava \
+              -- index
+            test -s index.scip
+          )
+
+          (
+            cd quality/jaxrs-federation/backend
+            coursier launch org.scip-code:scip-java:0.14.2 \
+              -M org.scip_code.scip_java.ScipJava \
+              -- index
+            test -s index.scip
+          )
 
       - name: Build frontend SCIP index
         working-directory: apps/frontend
@@ -166,6 +188,9 @@ jobs:
           status=$?
           set -e
           test "$status" -eq 1
+
+      - name: Cross-repository JAX-RS interface inheritance passes
+        run: node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-federation/cross-repo.yml
 
       - name: Java parse failure produces PARTIAL
         shell: bash
