@@ -192,6 +192,24 @@ jobs:
       - name: Cross-repository JAX-RS interface inheritance passes
         run: node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-federation/cross-repo.yml
 
+      - name: Missing Java interface owner produces PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-federation/missing-owner.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
+
+      - name: Ambiguous Java interface owner produces PARTIAL
+        shell: bash
+        run: |
+          set +e
+          node .tools/arch-gate/dist/src/index.js check --config ./quality/jaxrs-federation/ambiguous-owner.yml
+          status=$?
+          set -e
+          test "$status" -eq 3
+
       - name: Java parse failure produces PARTIAL
         shell: bash
         run: |
